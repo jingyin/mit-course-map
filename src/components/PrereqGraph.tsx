@@ -506,7 +506,7 @@ export default function PrereqGraph() {
                 color: "#333",
               }}
             >
-              MIT Course Prerequisite Map
+              MIT Course Map
             </h2>
 
             <input

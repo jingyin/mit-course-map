@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MIT Course Prerequisite Map",
+  title: "MIT Course Map",
   description:
     "Interactive dependency map of prerequisites for MIT science and engineering courses",
 };

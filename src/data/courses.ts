@@ -440,7 +440,7 @@ export const courses: Course[] = [
   c("6.7200", "Biomedical Devices Design Laboratory", ["6.2000"], []),
   c("6.7210", "Design of Medical Devices and Implants", ["6.2000"], []),
   c("6.7300", "Biomedical Imaging: Signals and Systems", ["6.3010"], []),
-  c("6.7310", "Advanced Biomedical Imaging", ["6.7300"], []),
+  c("6.7310", "Introduction to Numerical Methods", ["18.06"], []),
   c("6.7400", "Deep Learning for Science and Engineering", ["6.4310"], []),
   c("6.7500", "Neural-Inspired Sensors", ["6.1210"], []),
   c("6.8100", "Innovation Teams: Founding Your Startup", [], []),
