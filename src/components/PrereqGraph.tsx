@@ -178,6 +178,7 @@ export default function PrereqGraph() {
     initialCourse
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [layoutVersion, setLayoutVersion] = useState(0);
   const [highlightMode, setHighlightMode] = useState<
     "none" | "prereqs" | "dependents"
   >(initialCourse ? "prereqs" : "none");
@@ -203,6 +204,7 @@ export default function PrereqGraph() {
       if (!cancelled) {
         setNodes(layoutNodes);
         setEdges(layoutEdges);
+        setLayoutVersion((v) => v + 1);
       }
     });
     return () => { cancelled = true; };
@@ -251,7 +253,7 @@ export default function PrereqGraph() {
         },
       }))
     );
-  }, [selectedCourse, highlightMode, setNodes, setEdges]);
+  }, [selectedCourse, highlightMode, setNodes, setEdges, layoutVersion]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
