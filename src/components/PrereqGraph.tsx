@@ -25,7 +25,7 @@ import {
   type PrereqGraph,
   type GraphNode as GNode,
 } from "@/lib/graph";
-import { DEPARTMENTS, DEPT_COLORS, courseMap, variantGroups } from "@/data/courses";
+import { DEPARTMENTS, DEPT_COLORS, courseMap, variantGroups, variantOf, courses } from "@/data/courses";
 import type { GraphEdge } from "@/lib/graph";
 
 const NODE_WIDTH = 220;
@@ -281,17 +281,37 @@ export default function PrereqGraph() {
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
-    return graph.nodes
-      .filter(
-        (n) =>
-          n.id.toLowerCase().includes(q) ||
-          n.title.toLowerCase().includes(q) ||
-          n.variantIds.some((v) => v.toLowerCase().includes(q))
-      )
-      .slice(0, 8);
-  }, [searchQuery, graph.nodes]);
+    // Search across ALL courses, not just the current department
+    const seen = new Set<string>();
+    const results: { id: string; title: string; dept: string }[] = [];
+    for (const course of courses) {
+      const cid = variantOf.get(course.id) ?? course.id;
+      if (seen.has(cid)) continue;
+      const variants = variantGroups.get(cid) ?? [cid];
+      if (
+        cid.toLowerCase().includes(q) ||
+        course.title.toLowerCase().includes(q) ||
+        variants.some((v) => v.toLowerCase().includes(q))
+      ) {
+        seen.add(cid);
+        const canonCourse = courseMap.get(cid);
+        results.push({
+          id: cid,
+          title: canonCourse?.title ?? course.title,
+          dept: canonCourse?.dept ?? course.dept,
+        });
+      }
+      if (results.length >= 8) break;
+    }
+    return results;
+  }, [searchQuery]);
 
   const focusOnNode = (nodeId: string) => {
+    // Switch to the course's department if needed
+    const course = courseMap.get(nodeId);
+    if (course && course.dept !== selectedDept) {
+      setSelectedDept(course.dept);
+    }
     setSelectedCourse(nodeId);
     setHighlightMode("prereqs");
     setSearchQuery("");
@@ -531,6 +551,18 @@ export default function PrereqGraph() {
                   >
                     <strong>{r.id}</strong>{" "}
                     <span style={{ color: "#666" }}>{r.title}</span>
+                    {r.dept !== selectedDept && (
+                      <span
+                        style={{
+                          marginLeft: 4,
+                          fontSize: 9,
+                          color: DEPT_COLORS[r.dept] ?? "#999",
+                          fontWeight: 600,
+                        }}
+                      >
+                        dept {r.dept}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -615,10 +615,10 @@ export const courses: Course[] = [
   c("16.C25", "Real World Computation with Julia", ["6.100A", "18.03", "18.06"], []),
 
   // ===== Department 18: Mathematics =====
-  c("18.01", "Calculus I", [], []),
-  c("18.01A", "Calculus I", [], []),
-  c("18.014", "Calculus I", [], []),
-  c("18.01L", "Calculus I", [], []),
+  c("18.01", "Single Variable Calculus", [], []),
+  c("18.01A", "Single Variable Calculus", [], []),
+  c("18.014", "Single Variable Calculus", [], []),
+  c("18.01L", "Single Variable Calculus", [], []),
   c("18.02", "Multivariable Calculus", ["18.01"], []),
   c("18.02A", "Multivariable Calculus", ["18.01"], []),
   c("18.022", "Multivariable Calculus", ["18.01"], []),
@@ -836,55 +836,211 @@ for (const course of courses) {
 }
 
 /**
- * Compute variant groups: courses with the same title that are NOT
- * in a prereq/coreq relationship with each other are variants of the same class.
+ * Cross-listed courses (marked with [J] in the MIT catalog).
+ * Each array lists course IDs that are the same subject.
+ * Only IDs from our tracked departments (1,2,3,5,6,8,10,16,18,20,22) are included.
+ */
+const CROSS_LISTINGS: string[][] = [
+  // Structural Engineering & Mechanics
+  ["1.015", "2.017"],
+  ["1.016", "2.00C"],
+  ["1.053", "2.003"],
+  ["1.058", "1.581", "2.060", "16.221"],
+  ["1.138", "2.062", "18.376"],
+  ["2.076", "16.223"],
+  ["1.573", "2.080"],
+  ["2.081", "16.230"],
+  ["1.583", "2.083", "16.215"],
+  ["2.099", "16.225"],
+  ["1.121", "2.174"],
+  ["1.545", "2.094"],
+
+  // Nonlinear Dynamics & Chaos
+  ["1.062", "18.354"],
+  ["1.068", "1.686", "2.033", "18.358"],
+  ["1.685", "2.034", "18.377"],
+  ["2.036", "18.385"],
+  ["2.050", "18.353"],
+
+  // Fluids & Environment
+  ["1.063", "2.250"],
+  ["1.066", "8.292"],
+  ["1.034", "3.094"],
+  ["1.086", "20.445"],
+  ["1.087", "20.446"],
+  ["1.084", "20.106"],
+  ["1.067", "10.421"],
+  ["1.096", "10.496"],
+  ["1.098", "22.078"],
+
+  // Materials & Nuclear
+  ["3.154", "22.054"],
+  ["3.31", "22.74"],
+  ["3.40", "22.71"],
+  ["3.33", "22.73"],
+  ["3.0061", "22.03"],
+  ["3.155", "6.2600"],
+  ["3.158", "6.2500"],
+  ["3.985", "5.24"],
+  ["3.085", "2.912"],
+
+  // Biomechanics & Bioengineering
+  ["2.797", "3.053", "6.4840", "20.310"],
+  ["3.055", "20.363"],
+  ["2.791", "6.4810", "20.370"],
+  ["2.793", "6.4830", "20.330"],
+  ["6.4850", "20.335"],
+  ["2.673", "20.309"],
+  ["2.715", "20.487"],
+  ["2.772", "20.110"],
+  ["10.538", "20.420"],
+  ["10.535", "20.535"],
+
+  // Chemistry & Biology
+  ["5.07", "20.507"],
+  ["5.54", "20.554"],
+  ["5.002", "10.380"],
+  ["5.008", "10.09"],
+  ["5.68", "10.652"],
+  ["5.697", "10.437"],
+  ["5.698", "10.637"],
+  ["5.70", "10.546"],
+  ["5.812", "10.258"],
+  ["5.82", "10.582"],
+  ["10.441", "20.361"],
+  ["8.590", "20.416"],
+  ["6.8701", "20.387"],
+  ["6.8711", "20.390"],
+  ["6.4880", "20.129"],
+  ["6.8720", "20.405"],
+
+  // Computation & Algorithms
+  ["6.1200", "18.062"],
+  ["6.1220", "18.410"],
+  ["6.1400", "18.400"],
+  ["6.5400", "18.404"],
+  ["6.5410", "18.405"],
+  ["6.5250", "18.437"],
+  ["6.5620", "18.425"],
+  ["18.335", "6.7310"],
+  ["18.336", "6.7340"],
+  ["18.337", "6.7320"],
+  ["2.092", "6.3730"],
+  ["2.093", "6.3732"],
+  ["2.096", "6.7300", "16.910"],
+  ["2.097", "6.7330", "16.920"],
+  ["1.127", "6.792"],
+
+  // Robotics & Control
+  ["2.124", "6.4200", "16.405"],
+  ["6.4130", "16.410"],
+  ["6.4132", "16.413"],
+  ["6.8110", "16.412"],
+  ["6.7100", "16.338"],
+  ["2.0911", "6.4420"],
+  ["6.2300", "16.30"],
+
+  // Quantum & Physics
+  ["2.111", "6.6410", "8.370", "18.435"],
+  ["6.6420", "8.371", "18.436"],
+  ["8.372", "18.438"],
+  ["6.6340", "8.431"],
+  ["8.315", "18.369"],
+  ["8.613", "22.611"],
+  ["8.614", "22.612"],
+  ["8.670", "22.67"],
+
+  // Energy & Sustainability
+  ["2.650", "10.291", "22.081"],
+  ["2.60", "10.390"],
+  ["2.62", "10.392", "22.40"],
+  ["1.850", "5.000", "10.600", "16.645"],
+
+  // Biomedical & Physiology
+  ["16.426", "2.796", "6.4822"],
+  ["16.456", "6.8800"],
+  ["16.55", "22.64"],
+
+  // Other Engineering
+  ["2.341", "10.531"],
+  ["2.59", "10.536", "22.313"],
+  ["2.874", "10.354"],
+  ["2.916", "10.407"],
+  ["6.7450", "16.37"],
+  ["6.9130", "16.667"],
+  ["1.044", "16.880"],
+
+  // Teaching & Professional
+  ["1.95", "5.95", "8.395", "18.094"],
+  ["5.961", "8.396", "18.896"],
+  ["5.962", "8.397", "18.897"],
+];
+
+/** Sort helper: numeric department, then lexicographic within dept */
+function sortByDept(a: string, b: string): number {
+  const deptA = parseInt(a.split(".")[0], 10);
+  const deptB = parseInt(b.split(".")[0], 10);
+  if (deptA !== deptB) return deptA - deptB;
+  return a.localeCompare(b);
+}
+
+/**
+ * Compute variant groups from two sources:
+ * 1. Cross-listed courses ([J] in the catalog) — merge across departments
+ * 2. Same-department same-title courses — merge as variants (e.g. Calculus I options)
  */
 export function computeVariantGroups(): {
   groups: Map<string, string[]>; // canonical -> [all variant IDs]
   variantOf: Map<string, string>; // any variant ID -> canonical ID
 } {
-  // Group by exact title
-  const byTitle = new Map<string, Course[]>();
-  for (const course of courses) {
-    const existing = byTitle.get(course.title) || [];
-    existing.push(course);
-    byTitle.set(course.title, existing);
-  }
-
   const groups = new Map<string, string[]>();
   const variantOf = new Map<string, string>();
 
-  for (const [, titleCourses] of byTitle) {
+  // Step 1: Cross-listed courses (explicit [J] data)
+  for (const group of CROSS_LISTINGS) {
+    const existing = group.filter((id) => courseMap.has(id));
+    if (existing.length < 2) continue;
+    existing.sort(sortByDept);
+    const canonical = existing[0];
+    groups.set(canonical, existing);
+    for (const id of existing) {
+      variantOf.set(id, canonical);
+    }
+  }
+
+  // Step 2: Same-department same-title variants
+  // Group by (dept, title), excluding courses already in a cross-listing
+  const byDeptTitle = new Map<string, Course[]>();
+  for (const course of courses) {
+    if (variantOf.has(course.id)) continue;
+    const key = `${course.dept}::${course.title}`;
+    const existing = byDeptTitle.get(key) || [];
+    existing.push(course);
+    byDeptTitle.set(key, existing);
+  }
+
+  for (const [, titleCourses] of byDeptTitle) {
     if (titleCourses.length < 2) continue;
 
     const ids = new Set(titleCourses.map((c) => c.id));
 
     // Find which courses have a prereq from within this title group
     const hasInternalPrereq = new Set<string>();
-    const isInternalPrereqOf = new Set<string>();
     for (const course of titleCourses) {
       for (const p of course.prereqs) {
         if (ids.has(p)) {
           hasInternalPrereq.add(course.id);
-          isInternalPrereqOf.add(p);
         }
       }
     }
 
-    // Level 0: courses with no internal prereqs
-    // Level 1: courses whose prereqs are all in level 0
-    // Courses at the same level are variants
+    // Courses at the same level (with/without internal prereqs) are variants
     const level0 = titleCourses.filter((c) => !hasInternalPrereq.has(c.id));
     const level1 = titleCourses.filter((c) => hasInternalPrereq.has(c.id));
 
     for (const level of [level0, level1]) {
       if (level.length < 2) continue;
-      const sortedIds = level.map((c) => c.id).sort((a, b) => {
-        const deptA = parseInt(a.split(".")[0], 10);
-        const deptB = parseInt(b.split(".")[0], 10);
-        if (deptA !== deptB) return deptA - deptB;
-        return a.localeCompare(b);
-      });
+      const sortedIds = level.map((c) => c.id).sort(sortByDept);
       const canonical = sortedIds[0];
       groups.set(canonical, sortedIds);
       for (const id of sortedIds) {

@@ -54,9 +54,16 @@ export function buildGraph(deptFilter?: string[]): PrereqGraph {
     : courses;
 
   // Determine which canonical IDs are relevant
+  // Skip courses whose canonical ID belongs to a different department
+  // (cross-listed courses only appear under their lowest-numbered dept)
   const canonicalIds = new Set<string>();
   for (const course of relevantCourses) {
-    canonicalIds.add(canonical(course.id));
+    const cid = canonical(course.id);
+    if (deptFilter && cid !== course.id) {
+      const canonCourse = courseMap.get(cid);
+      if (canonCourse && !deptFilter.includes(canonCourse.dept)) continue;
+    }
+    canonicalIds.add(cid);
   }
 
   // Collect edges using canonical IDs, deduplicating
@@ -84,15 +91,34 @@ export function buildGraph(deptFilter?: string[]): PrereqGraph {
     }
     for (const coreq of course.coreqs) {
       if (courseMap.has(coreq)) {
-        addEdge(course.id, coreq, "coreq");
         addEdge(coreq, course.id, "coreq");
       }
     }
   }
 
-  // Add external references
+  // Add external references and their inter-edges
   for (const extId of externalRefs) {
     canonicalIds.add(extId);
+  }
+  // Second pass: add edges between external reference nodes
+  for (const extId of externalRefs) {
+    const variants = variantGroups.get(extId) ?? [extId];
+    for (const vid of variants) {
+      const vc = courseMap.get(vid);
+      if (!vc) continue;
+      for (const prereq of vc.prereqs) {
+        if (courseMap.has(prereq)) {
+          const cp = canonical(prereq);
+          if (canonicalIds.has(cp)) addEdge(prereq, vid, "prereq");
+        }
+      }
+      for (const coreq of vc.coreqs) {
+        if (courseMap.has(coreq)) {
+          const cc = canonical(coreq);
+          if (canonicalIds.has(cc)) addEdge(coreq, vid, "coreq");
+        }
+      }
+    }
   }
 
   // Build node list from canonical IDs
